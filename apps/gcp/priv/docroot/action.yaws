@@ -1,0 +1,38 @@
+<erl>
+out(A) ->
+	Html = case gcp_event:api(A, "account", {"isSession"}) of
+		{ok, UserData} ->
+			case yaws_api:parse_query( A ) of
+				[{"action", "account"}, {"arg", "loginOut"}] ->
+					gcp_event:api( A, "account", {"loginOut"} );
+
+				[{"action", "comment"}, {"shop_id", ShopId}, {"comment_level", Level}, {"textarea", Textarea}] ->
+					gcp_event:api( A, "comment", {"tpl_comment", ShopId, UserData, Level, Textarea} );
+				[{"action", "comment_page"}, {"shop_id", ShopId}, {"comment_level", Level}, {"page", Page}] ->
+	                gcp_event:api( A, "comment", {"tpl_comment_page", ShopId, Level, Page} );
+
+				_ ->
+					"{\"state\":\"9\",\"msg\":\"arg error\"}"
+			end;
+		"{\"state\":\"105\",\"msg\":\"\"}" ->
+			case yaws_api:parse_query( A ) of
+				[{"action", "account"}, {"username", UserName}, {"pwd", Pwd}] ->
+					case gcp_event:api( A, "account", {"login", UserName, Pwd} ) of
+						"{\"state\":200,\"msg\":\"ok\"}" -> {cookie, UserName, yaws_api:new_cookie_session( UserName )};
+						Error -> Error
+					end;
+				[{"action", "account"}, {"reg_username", UserName}, {"reg_pwd", Pwd}, {"reg_nick", Nick}] ->
+					case gcp_event:api( A, "account", {"reg", UserName, Pwd, Nick} ) of
+						"{\"state\":200,\"msg\":\"ok\"}" -> {cookie, UserName, yaws_api:new_cookie_session( UserName )};
+						Error -> Error
+					end;
+				_ ->
+					"{\"state\":\"105\",\"msg\":\"no cookie\"}"
+			end
+	end,
+	case Html of
+		{cookie, ReUserName, Cookie} -> [{html, "{\"state\":200,\"msg\":\""++ReUserName++"\"}"}, yaws_api:setcookie("gcp_session",Cookie)];
+		{url, Redirect} -> [yaws_api:redirect(Redirect)];
+		_ -> {html, Html}
+	end.
+</erl>

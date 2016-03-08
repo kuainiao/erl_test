@@ -1,0 +1,19 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+.idea/
+.rebar/
+deps/
+ebin/
+log/
+img/
+img_to/
+priv/*.so
+*.iml
+*.txt
+*.dump
+Mnesia.nonode@nohost
+c_src/magick/1.jpg
+c_src/magick/demo
+c_src/magick/*.o
+c_src/nif/*.o
+rel/erl_test

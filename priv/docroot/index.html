@@ -1,0 +1,77 @@
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf8">
+  <title>测试</title>
+
+<script language="javascript">
+function test(){
+    document.getElementById("submit").style.display="none";
+    document.getElementById("task_loading").style.display="";
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/test/');
+    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    xhr.send("url=" + document.getElementById("URL").value+
+                "&method="+document.getElementById("type").value+
+                "&count="+document.getElementById("count").value+
+                "&process="+document.getElementById("process").value+
+                "&args="+document.getElementById("args").value);
+    <!--xhr.timeout = 5000;-->
+    <!--xhr.ontimeout = function(event){-->
+    <!--alert('timeout!');-->
+    <!--}-->
+    xhr.onreadystatechange = function(){
+        document.getElementById("submit").style.display="";
+        document.getElementById("task_loading").style.display="none";
+        if ( xhr.readyState == 4 && xhr.status == 200 )
+        {
+
+            if(xhr.responseText == "error")
+            {
+                document.getElementById("result").innerHTML = "error!";
+            }
+            else
+            {
+                document.getElementById("result").innerHTML = xhr.responseText/1000000+"s";
+            }
+        }
+        else
+        {
+            document.getElementById("result").innerHTML = "服务器错误请稍候再试";
+        }
+    };
+}
+</script>
+</head>
+
+<body>
+<div style="width:660px;float:left;">
+<p>请输入URL:<input type="input" id="URL" name="URL" value="http://61.152.156.126:8019/search" style="width:400px;line-height: 1.5;margin-left: 5px;"/></p>
+<p>请选择方法：<select id="type">
+  <option value="GET">GET</option>
+  <option value="POST" selected="selected">POST</option>
+</select>
+</p>
+<p>测试条件:</p>
+<p>执行次数：<input type="input" id="count" value="1" name="count" style="line-height: 1.5;margin-left: 5px;"/>
+  每次并发数量：<input type="input" id="process" value="1000" name="process" style="line-height: 1.5;margin-left: 5px;"/></p>
+<div>
+  请输入参数:<textarea rows="10" cols="30" id="args" name="args" style="vertical-align: top;">{"aya":"66666666","keyword":"范冰冰","offset":"-1","direction":"1","reqlen":"10"}</textarea>
+</div>
+
+<input type="submit" onclick="test();" id="submit" value="提交"/>
+<img src="img/loading.gif" width="60px" height="60px" style="display:none;vertical-align: middle;" id="task_loading"/>
+</div>
+
+
+<div style="width: 20px; bottom: 0px;overflow-x: hidden;overflow-y: scroll;top: 0;position: absolute;left:700px;bottom: 0;z-index: 6;">
+  <div style="width: 20px; height: 100%;position: absolute;cursor: text;left: 0;top: 0;"></div>
+</div>
+
+<div style="position: absolute;left:730px;">
+  <p><a href = "http://192.168.1.101:8031/" target="_blank">点击查看测试机性能开销</a></p>
+  <p>测试结果：</p>
+  <p id="result" style="color:red;"></p>
+</div>
+
+</body>
+</html>
