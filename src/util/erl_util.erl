@@ -5,7 +5,7 @@
 %%%-------------------------------------------------------------------
 -module(erl_util).
 
--export([md5/1, md5_to_str/1, get_path/1, now/0, sec_to_localtime/1, uuid/0, random/1]).
+-export([md5/1, md5_to_str/1, get_path/1, now/0, sec_to_localtime/1, uuid/0, random/1, lists_spawn/3]).
 
 md5(S) ->
     Md5_bin = erlang:md5(S),

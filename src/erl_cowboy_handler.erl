@@ -29,10 +29,15 @@ handle(Req, State) ->
                            Time = inets_httpc:test(unicode:characters_to_list(Url), binary_to_integer(Count), binary_to_integer(Process), Args),
                            cowboy_req:reply(200, [], integer_to_list(Time), Req2);
                        _ ->
+                           io:format("post date:~p~n", [PostData]),
                            cowboy_req:reply(200, [], "error", Req2)
                    end;
                {<<"GET">>, Req1} ->
-                   cowboy_req:reply(200, [], "GET", Req1)
+                   {Path, _R1} = cowboy_req:path(Req1),
+                   {Qs, _R2} = cowboy_req:qs(_R1),
+                   {Header, _R3} = cowboy_req:headers(_R2),
+                   io:format("get date:~p~n", [[Path, Qs, Header]]),
+                   cowboy_req:reply(200, [], "true", _R2)
            end,
     {ok, Req3, State}.
 

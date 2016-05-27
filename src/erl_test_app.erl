@@ -12,7 +12,7 @@
 start(_StartType, _StartArgs) ->
     init_cowboy(),
 
-    recon_web:start(),
+%%    recon_web:start(),
 
     erl_test_sup:start_link().
 
@@ -33,10 +33,9 @@ init_cowboy() ->
 
         ]}
     ]),
-    {ok, _} = cowboy:start_http(http, 10, [{port, 8030}], [
+    {ok, _} = cowboy:start_http(http, 10, [{port, 8000}], [
         {env, [{dispatch, Dispatch}]}
     ]).
 
 start() ->
-    application:start(crypto),
-    application:start(erl).
+    application:start(erl_test).

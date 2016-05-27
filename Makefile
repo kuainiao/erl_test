@@ -14,7 +14,7 @@ get-deps:
 
 
 st:
-	erl +K true +pc unicode -pa ebin/ deps/*/ebin/ -s erl_app #leofs_magick_test
+	erl +K true +pc unicode -pa ebin/ deps/*/ebin/ -s erl_test_app #leofs_magick_test
 	#erl -pa ebin +K true +A 10 +sbt db +sbwt very_long +swt very_low +Mulmbcs 32767 +Mumbcgs 1 +Musmbcs 2047
 
 
