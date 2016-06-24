@@ -23,5 +23,8 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []} }.
+    Child = [
+        ?CHILD(erl_gen_server, worker)
+    ],
+    {ok, {{one_for_one, 5, 10}, Child}}.
 
