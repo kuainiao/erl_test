@@ -16,8 +16,6 @@ extern "C"{
 
 static ERL_NIF_TERM convert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-
-
     int width, height, img_quality_num;
     string img_jpeg_quality;
     stringstream ss;

@@ -1,166 +1,115 @@
-#include "erl_nif.h"
+                  #include <stdio.h>
+                  #include <string.h>
+                  #include <time.h>
+                  #include <sys/types.h>
+                  #include <magick/api.h>
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+                  #include <erl_nif.h>
 
-#include <wand/magick_wand.h>
+                  const int IMG_RESIZES[3][2]={{80, 80}, {320, 320}, {640, 640}};
+                  int array_len = sizeof(IMG_RESIZES)/sizeof(int)/2;
+                  unsigned long img_size, img_quality_num;
 
-//#include "queue.h"
+                  static ERL_NIF_TERM convert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+                  {
+                      ExceptionInfo
+                          exception;
 
-const int IMG_RESIZES[3][2]={{80, 80}, {320, 320}, {640, 640}};
+                      Image
+                          *image,
+                          *resize_image;
 
-int width, height, array_len;
-long unsigned int img_size=0;
-unsigned long img_quality_num;
+                      ImageInfo
+                          *image_info;
 
-//typedef enum {
-//    cmd_unknown,
-//    cmd_convert
-//} command_type;
-//
-//typedef struct {
-//    command_type type;
-//
-//    ErlNifEnv *env;
-//    ErlNifPid pid;
-//    ERL_NIF_TERM arg;
-//} magick_command;
-//
-//static void
-//command_destroy(void *obj)
-//{
-//    magick_command *cmd = (magick_command *) obj;
-//
-//    if(cmd->env != NULL)
-//	   enif_free_env(cmd->env);
-//
-//    enif_free(cmd);
-//}
-//
-//static magick_command *
-//command_create()
-//{
-//    magick_command *cmd = (magick_command *) enif_alloc(sizeof(magick_command));
-//    if(cmd == NULL)
-//	   return NULL;
-//
-//    cmd->env = enif_alloc_env();
-//    if(cmd->env == NULL) {
-//	    command_destroy(cmd);
-//        return NULL;
-//    }
-//
-//    cmd->type = cmd_unknown;
-//    cmd->arg = 0;
-//
-//    return cmd;
-//}
-//
-//static ERL_NIF_TERM
-//push_command(ErlNifEnv *env, magick_command *cmd) {
-//    if(!queue_push(cmd))
-//        return enif_make_int(env, 2);
-//
-//    return enif_make_atom(env, "ok");
-//}
+                      int
+                          i,width, height;
 
-static ERL_NIF_TERM
-do_covnert(ErlNifEnv *env, const ERL_NIF_TERM argv[])
-{
-    InitializeMagick(NULL);
-    ErlNifBinary bin;
-    enif_inspect_binary(env, argv[0], &bin);
+                      ErlNifBinary bin;
+                      enif_inspect_binary(env, argv[0], &bin);
 
-    MagickWand *magick_wand = NewMagickWand();
-    MagickWand *wand;
+                      /*
+                      Initialize the image info structure and read the list of files
+                      provided by the user as a image sequence
+                      */
+                      InitializeMagick(NULL);
 
-    MagickReadImageBlob(magick_wand, bin.data, bin.size);
+                      GetExceptionInfo(&exception);
 
-    img_quality_num = (unsigned long)MagickGetImageAttribute(magick_wand, "JPEG-Quality");
-    if( img_quality_num > 75)
-    {
-        img_quality_num = 75;
-    }
+                      image_info=CloneImageInfo((ImageInfo *) NULL);
 
-    array_len = sizeof(IMG_RESIZES)/sizeof(int)/2;
+                      image = BlobToImage(image_info,bin.data,bin.size,&exception);
 
-    ERL_NIF_TERM r = enif_make_list(env, 0);
-    ErlNifBinary h;
+                      /*
+                      Create a thumbnail image sequence
+                      */
+                      ERL_NIF_TERM r = enif_make_list(env, 0);
+                      ErlNifBinary h;
 
-    for(int i=0;i<1;i++)
-    {
-        for(int m=0; m<array_len;m++)
-        {
-                wand = CloneMagickWand(magick_wand);
-                width = IMG_RESIZES[m][0];
-                height = (int)(MagickGetImageHeight(wand)*width/MagickGetImageWidth(wand)+0.5);
-                MagickSetCompressionQuality(wand, img_quality_num);
+                      const ImageAttribute
+                      	  *attribute;
+                      attribute = GetImageAttribute(image, "JPEG-Quality");
 
-                MagickResizeImage(wand, width, height, DefaultThumbnailFilter,1.0);
+                      img_quality_num = atoi(attribute->value);
+                  //    printf("quality:%s...image_info qua::%ld...img_quality_num:%ld...\n", attribute->value, image_info->quality, img_quality_num);
+                      if( img_quality_num > 75)
+                      {
+                          img_quality_num = 75;
+                      }
+                      for (i=0; i< array_len; i++)
+                      {
 
-//                printf("222...num:%ld...width:%d...height:%d...image_size:%ld...\n",img_quality_num, width, height, MagickGetImageSize(wand));
-                unsigned char *blob;
-                blob = MagickWriteImageBlob(wand,&img_size),
-                img_size = MagickGetImageSize(wand);
-//                printf("img size:%ld\n", img_size);
+                  //        printf("ima size:%ld...\n", GetBlobSize(image));
+                          width = IMG_RESIZES[i][0];
+                          height = image->rows * width / image->columns + 1;
+                          resize_image=ResizeImage(image,width,height,LanczosFilter,1.0,&exception);
 
-                enif_alloc_binary(img_size, &h);
-                memcpy(h.data, blob, img_size);
-                r = enif_make_list_cell(env, enif_make_binary(env, &h), r);
-                DestroyMagickWand(wand);
-                free(blob);
-        }
-    }
+                          if (resize_image == (Image *) NULL)
+                          {
+                            CatchException(&exception);
+                            return enif_make_int(env, 1);
+                          }
 
-    ERL_NIF_TERM result;
-    enif_make_reverse_list(env, r, &result);
-    DestroyMagickWand(magick_wand);
-    DestroyMagick();
+                          unsigned char *blob;
+                          image_info->quality=img_quality_num;
+                          blob = ImageToBlob(image_info, resize_image, &img_size, &exception);
+                          if(blob ==(void *) NULL)
+                          {
+                              printf("Failed to ImageToBlob!\n");
+                              return enif_make_int(env, 2);
+                          }
 
-    return result;
-//    enif_schedule_dirty_nif_finalizer(env, result, enif_dirty_nif_finalizer);
-}
+                  //        printf("111:%ld\n", GetBlobSize(resize_image));
+
+                          if (resize_image == (Image *) NULL)
+                          {
+                              CatchException(&exception);
+                              continue;
+                          }
+                          enif_alloc_binary(img_size, &h);
+                          memcpy(h.data, blob, img_size);
+                          r = enif_make_list_cell(env, enif_make_binary(env, &h), r);
+                          DestroyImage(resize_image);
+                          free(blob);
+                      }
+
+                      /*
+                      Release resources
+                      */
+
+                      DestroyImage(image);
+                      DestroyImageInfo(image_info);
+                      DestroyExceptionInfo(&exception);
+                      DestroyMagick();
+                      ERL_NIF_TERM result;
+                      enif_make_reverse_list(env, r, &result);
+                      return result;
+                  }
 
 
-//static ERL_NIF_TERM
-//push_command(ErlNifEnv *env, esqlite_command *cmd) {
-//    if(!queue_push(cmd))
-//        return enif_make_int(env, 2);
-//
-//    return enif_make_int(env, 0);
-//}
+                  static ErlNifFunc nif_funcs[] =
+                  {
+                      {"convert", 1, convert}
+                  };
 
-
-static ERL_NIF_TERM convert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-//    magick_command *cmd = NULL;
-//    ErlNifPid pid;
-//
-//    cmd = command_create();
-//    if(!cmd)
-//	    return enif_make_int(env, 1);
-//
-//    cmd->type = cmd_convert;
-//    cmd->pid = pid;
-//    cmd->arg = enif_make_copy(cmd->env, argv[0]);
-//
-//    return push_command(env, cmd);
-
-
-
-    return do_covnert(env, argv);
-
-
-}
-
-
-static ErlNifFunc nif_funcs[] =
-{
-    {"convert", 1, convert, ERL_NIF_DIRTY_JOB_CPU_BOUND}
-};
-
-ERL_NIF_INIT(leofs_magick,nif_funcs,NULL,NULL,NULL,NULL)
-
-
+                  ERL_NIF_INIT(leofs_magick,nif_funcs,NULL,NULL,NULL,NULL)

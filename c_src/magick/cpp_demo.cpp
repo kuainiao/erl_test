@@ -10,6 +10,7 @@ using namespace std;
 using namespace Magick;
 
 const int IMG_RESIZES[3][2]={{80, 80}, {320, 320}, {640, 640}};
+//const int IMG_RESIZES[1][2]={{80, 80}};
 const int array_len = sizeof(IMG_RESIZES)/sizeof(int)/2;
 
 int write(Image image)
@@ -46,7 +47,7 @@ int main(int argc,char **argv)
 
     InitializeMagick(*argv);
 
-    Image image("1.jpg");
+    Image image("../img/1.jpg");
 
     for(int m = 0; m < 1000; m++){
         write(image);
@@ -59,4 +60,4 @@ int main(int argc,char **argv)
 }
 
 
-//c++ -o demo magick_demo.cpp -O `GraphicsMagick++-config --cppflags --cxxflags --ldflags --libs`
+//c++ -o demo cpp_demo.cpp -O `GraphicsMagick++-config --cppflags --cxxflags --ldflags --libs`
